@@ -652,28 +652,44 @@ class Interface:
                     {"driver": "GTiff",
                      "height": mosaic.shape[1],
                      "width": mosaic.shape[2],
-                     "transform": output
+                     "transform": output,
+                     "compress": "lzw",
+                     "tiled": True,
+                     "blockxsize": 512,
+                     "blockysize": 512,
+
                      }
                 )
+                factors = [2]
+                while min(mosaic.shape[1], mosaic.shape[2]) / factors[-1] >= 1024:
+                    factors.append(factors[-1] * 2)
 
                 if 'outputdirectory' in kwargs.keys():
                     if 'filename' in kwargs.keys():
                         with rasterio.open(os.path.join(
                                 kwargs['outputdirectory'], kwargs['filename'] + '.geotiff'), "w", **output_data) as m:
                             m.write(mosaic)
+                            m.build_overviews(factors, rasterio.enums.Resampling.gauss)
+                            m.update_tags(ns='rio_overview', resampling='gauss')
                         print("Finished image mosaic process, output directory is: {}".format(kwargs['outputdirectory']))
                     else:
                         with rasterio.open(os.path.join(
                                 kwargs['outputdirectory'], 'merged_image.geotiff'), "w", **output_data) as m:
                             m.write(mosaic)
+                            m.build_overviews(factors, rasterio.enums.Resampling.gauss)
+                            m.update_tags(ns='rio_overview', resampling='gauss')
                         print("Finished image mosaic process, output directory is: {}".format(kwargs['outputdirectory']))
                 else:
                     if 'filename' in kwargs.keys():
                         with rasterio.open(os.path.join(base_dir, kwargs['filename'] + '.geotiff'), "w", **output_data) as m:
                             m.write(mosaic)
+                            m.build_overviews(factors, rasterio.enums.Resampling.gauss)
+                            m.update_tags(ns='rio_overview', resampling='gauss')
                     else:
                         with rasterio.open(os.path.join(base_dir, 'merged_image.geotiff'), "w", **output_data) as m:
                             m.write(mosaic)
+                            m.build_overviews(factors, rasterio.enums.Resampling.gauss)
+                            m.update_tags(ns='rio_overview', resampling='gauss')
                     print("Finished image mosaic process, output directory is: {}".format(base_dir))
         else:
             self._pillow_mosaic(base_dir, img_format, img_size=1024, **kwargs)
