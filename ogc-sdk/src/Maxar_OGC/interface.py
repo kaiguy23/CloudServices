@@ -395,7 +395,10 @@ class Interface:
         if bbox is not None:
             process._validate_bbox(bbox, srsname=srsname)
         filter = "featureId='{}'".format(featureid)
-        wfs_request = self.search(filter=filter, srsname=srsname)
+        if kwargs.get('search_result'):
+            wfs_request = kwargs['search_result']
+        else:
+            wfs_request = self.search(filter=filter, srsname=srsname)
         image_bbox = wfs_request[0]['geometry']['coordinates'][0]
         x_coords = [x[0] for x in image_bbox]
         y_coords = [y[1] for y in image_bbox]
@@ -490,25 +493,24 @@ class Interface:
         print("Started full image download process...")
 
         #This section deletes bboxes that don't cover the image from Tiles
-        wfs_Response = self.wfs.search(filter=filter, srsname=srsname)
+        # wfs_Response = self.wfs.search(filter=filter, srsname=srsname)
 
-        if bbox is not None:
-            if process.aoi_coverage(bbox, wfs_Response)['features'][0]['bbox_coverage'] == 0:
-                raise Exception("Bounding box is outside of desired feature's AOI")
+        # if bbox is not None:
+        #     if process.aoi_coverage(bbox, wfs_Response)['features'][0]['bbox_coverage'] == 0:
+        #         raise Exception("Bounding box is outside of desired feature's AOI")
+        # keysToDel = []
+        # for tile, tile_bbox in tiles.items():
+        #     if srsname == "EPSG:4326":
+        #         bbox_coverage = process.aoi_coverage(tile_bbox, wfs_Response)['features'][0]['coverage']
+        #     else:
+        #         tile_bbox_list = [i for i in tile_bbox.split(',')]
+        #         sub_bbox = ",".join([tile_bbox_list[1], tile_bbox_list[0], tile_bbox_list[3], tile_bbox_list[2], srsname])
+        #         bbox_coverage = process.aoi_coverage(sub_bbox + ",{}".format(srsname), wfs_Response)['features'][0]['coverage']
+        #     if bbox_coverage == 0.0:
+        #         keysToDel.append(tile)
 
-        keysToDel = []
-        for tile, tile_bbox in tiles.items():
-            if srsname == "EPSG:4326":
-                bbox_coverage = process.aoi_coverage(tile_bbox, wfs_Response)['features'][0]['coverage']
-            else:
-                tile_bbox_list = [i for i in tile_bbox.split(',')]
-                sub_bbox = ",".join([tile_bbox_list[1], tile_bbox_list[0], tile_bbox_list[3], tile_bbox_list[2], srsname])
-                bbox_coverage = process.aoi_coverage(sub_bbox + ",{}".format(srsname), wfs_Response)['features'][0]['coverage']
-            if bbox_coverage == 0.0:
-                keysToDel.append(tile)
-
-        for tileKey in keysToDel:
-            del tiles[tileKey]
+        # for tileKey in keysToDel:
+        #     del tiles[tileKey]
 
 
         url = self.wms.base_url
