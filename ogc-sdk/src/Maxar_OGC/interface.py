@@ -637,6 +637,7 @@ class Interface:
             try:
                 import rasterio
                 from rasterio.merge import merge
+                from rasterio.errors import RasterioIOError
             except:
                 self._pillow_mosaic(base_dir, img_format, img_size=1024, **kwargs)
                 print("GDAL is not installed on your machine. The downloaded image will not be georeferenced. "
@@ -646,9 +647,15 @@ class Interface:
                 srcs_to_mosaic = []
                 for image in os.listdir(base_dir):
                     if image.endswith('.geotiff'):
-                        raster = rasterio.open(os.path.join(base_dir, image))
-                        srcs_to_mosaic.append(raster)
-                        output_data = raster.meta.copy()
+                        filename = os.path.join(base_dir, image)
+                        try:
+                            raster = rasterio.open(filename)
+                            output_data = raster.meta.copy()
+                            raster.close()
+                        except RasterioIOError:
+                            print(f'Skipping bad tile {image}')
+                            continue
+                        srcs_to_mosaic.append(filename)
                 mosaic, output = merge(srcs_to_mosaic)
                 output_data.update(
                     {"driver": "GTiff",
